@@ -7,7 +7,9 @@ import 'dart:developer';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:dbdb/model/favorite_data.dart';
-import 'package:dbdb/model/group_data.dart';
+import 'package:dbdb/model/group_code.dart';
+import 'package:dbdb/model/route_code.dart';
+import 'package:dbdb/model/route_data.dart';
 
 class DatabaseHelper {
   static const _databaseName = "gobal.db";
@@ -62,7 +64,7 @@ class DatabaseHelper {
     await db.execute('''
           CREATE TABLE $_groupTable (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name text NOT NULL
+            name text NOT NULL UNIQUE
           ) ''');
 
     log('-- groupCode table successfully created.');
@@ -77,7 +79,7 @@ class DatabaseHelper {
           CREATE TABLE $_favoritesTable (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             groupId INTEGER default 1, 
-            name text NOT NULL,
+            name text NOT NULL UNIQUE,
             latitude DOUBLE NOT NULL,
             longitude DOUBLE NOT NULL,
             accuracy DOUBLE NOT NULL,
@@ -89,7 +91,7 @@ class DatabaseHelper {
     await db.execute('''
     CREATE TABLE $_routeCodeTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name text NOT NULL,
+        name text NOT NULL UNIQUE,
       updated TEXT
     ) ''');
     log('-- routeCode table successfully created.');
@@ -103,7 +105,8 @@ class DatabaseHelper {
             latitude DOUBLE NOT NULL,
             longitude DOUBLE NOT NULL,
             accuracy DOUBLE NOT NULL,
-            PRIMARY KEY (routeId, idx)
+            PRIMARY KEY (routeId, idx),
+            CONSTRAINT UNIQ_ROUTES UNIQUE (routeId, name)
           ) ''');
     log('-- routes table successfully created.');
     log('-- all tables are successfully created.');
@@ -130,7 +133,7 @@ class DatabaseHelper {
   }
 
   Future<int> insertFavorite(FavoriteData fd) async {
-    int result = 0; // insert를 한 후 생성된 id를 반환하는 것 같다.
+    int result = 0; // insert를 한 후 생성된 id또는 레코드 개수를 반환하는 것 같다.
     const String _tableName = _favoritesTable;
 
     try {
@@ -149,8 +152,42 @@ class DatabaseHelper {
   } // insertFavorite
 
 
+  Future<int> insertRouteCode(String name, String updated) async {
+    int result = 0; // insert를 한 후 테이블의 레코드 수를 반환하는 것 같다.
+    const String _tableName =_routeCodeTable;
+
+    try {
+      Database db = await DatabaseHelper.instance.database;
+      result = await db.rawInsert(
+          'INSERT INTO $_tableName (name, updated) VALUES (?, ?)',
+          [name, updated]);
+    } catch (e) {
+      log(e.toString());
+      rethrow;
+    }
+    log('insert: $_tableName, $result rows.');
+    return result;
+  }
+
+  Future<int> insertRoute(RouteData rd) async {
+    int result = 0; // insert를 한 후 생성된 id또는 레코드 개수를 반환하는 것 같다.
+    const String _tableName = _routesTable;
+
+    try {
+      Database db = await DatabaseHelper.instance.database;
+      //routes table은 논리적으로 복잡해지기 때문에 해당 routeId를 모두 삭제한 후 새로운 데이터로 다시 insert한다.
+      result = await db.insert(_tableName, rd.toJson());
+    } catch (e) {
+      log('insert routes table ERROR: ${e.toString()}');
+      rethrow;
+    }
+    log('insert: $_tableName, routeId: ${rd.routeId}, idx: ${rd.idx}');
+    return result;
+  } // insertRoute
+
+
   // read data
-  Future<List<GroupData>> queryAllGroupCode() async {
+  Future<List<GroupCode>> queryAllGroupCode() async {
     const String _tableName = _groupTable;
     try {
       Database db = await DatabaseHelper.instance.database;
@@ -160,7 +197,7 @@ class DatabaseHelper {
           );
 
       if(result.isEmpty) return [];
-      List<GroupData> list = result.map((val) => GroupData(
+      List<GroupCode> list = result.map((val) => GroupCode(
               id: val['id'],
               name: val['name']))
               .toList();
@@ -184,17 +221,6 @@ class DatabaseHelper {
       // print(result);
 
       List<FavoriteData> list = result.map((val) => FavoriteData.fromJson(val)).toList();
-      // List<FavoriteData> list =  List.generate(maps.length, (i) {
-      //   return FavoriteData(
-      //     id: maps[i]["id"],
-      //     groupId: maps[i]["groupId"],
-      //     name: maps[i]["name"],
-      //     latitude: maps[i]["latitude"],
-      //     longitude: maps[i]["longitude"],
-      //     accuracy: maps[i]["accuracy"],
-      //     updated: maps[i]["updated"]
-      //   );
-      // });
       return list;
     } catch (e) {
       log('query favorites table error: $e');
@@ -202,65 +228,94 @@ class DatabaseHelper {
     }
   } // queryAllFavorite
 
-  // Future<List<FavoriteData>> queryAllFavorite() async {
-  //   const String _tableName = _favoritesTable;
-  //   try {
-  //     Database db = await DatabaseHelper.instance.database;
-  //
-  //     List<Map<String, dynamic>> result = await db.rawQuery(
-  //         'SELECT * FROM $_tableName ORDER BY NAME'
-  //     );
-  //
-  //     log('map length: ${result.length}');
-  //     if(result.isEmpty) return [];
-  //     List<FavoriteData> list = result.map((val) => FavoriteData(
-  //       id: val["id"],
-  //       groupId: val["groupId"],
-  //       name: val["name"],
-  //       latitude: val["latitude"].toDouble(),
-  //       longitude: val["longitude"].toDouble(),
-  //       accuracy: val["accuracy"].toDouble(),
-  //       updated: val["updated"],))
-  //         .toList();
-  //     return list;
-  //   } catch (e) {
-  //     log('query favorites table error: $e');
-  //     return [];
-  //   }
-  // } // queryAllFavorite
+  Future<List<RouteData>> queryAllRoute(int routeId) async {
+    const String _tableName = _routesTable;
+    try {
+      Database db = await DatabaseHelper.instance.database;
+
+      List<Map<String, dynamic>> result = await db.rawQuery(
+          'SELECT * FROM $_tableName WHERE routeId = ? ORDER BY idx',
+        [routeId]
+      );
+
+      log('map length: ${result.length}');
+      if(result.isEmpty) return [];
+      List<RouteData> list = result.map((val) => RouteData.fromJson(val)).toList();
+      return list;
+    } catch (e) {
+      log('query routes table error: $e');
+      return [];
+    }
+  } // queryAllRoute
+
+  Future<List<RouteCode>> queryAllRouteCode() async {
+    const String _tableName = _routeCodeTable;
+    try {
+      Database db = await DatabaseHelper.instance.database;
+
+      List<Map<String, dynamic>> result = await db.rawQuery(
+          'SELECT * FROM $_tableName ORDER BY updated desc'
+      );
+
+      if(result.isEmpty) return [];
+      List<RouteCode> list = result.map((val) => RouteCode.fromJson(val)).toList();
+      return list;
+    } catch (e) {
+      log('Query routeCode error: $e');
+      return [];
+    }
+  } // queryAllRouteCode
 
 
   // delete data
-  Future<int> deleteGroupCode(int id) async {
-    const String _tableName = _groupTable;
+  Future<int> deleteById(String tableName, int id) async {
     Database db = await DatabaseHelper.instance.database;
     int result = await db.rawDelete(
-        'DELETE FROM $_tableName WHERE id = ?',
+        'DELETE FROM $tableName WHERE id = ?',
         [id]
     );
-    // assert(result == 1);
+    log('deleteFromTable, table: $tableName, result: $result');
     return result;
-  }
+  } // deleteFromTable
 
-  Future<void> deleteAllGroupCode() async {
-    const String _tableName = _groupTable;
+  Future<int> deleteRouteId(int routeId) async {
+    const String _tableName = _routesTable;
+    Database db = await DatabaseHelper.instance.database;
+    int result = await db.rawDelete(
+        'DELETE FROM $_tableName WHERE routeId = ?',
+        [routeId]
+    );
+    log('deleteRouteId, table: $_tableName, result: $result');
+    return result;
+  } // deleteRouteId
+
+  Future<void> deleteAllFromTable(String tableName) async {
     Database db = await DatabaseHelper.instance.database;
     await db.rawDelete(
-        'DELETE FROM $_tableName'
+        'DELETE FROM $tableName'
     );
   }
 
   //Update
-  Future<int>  updateGroupCode(GroupData data) async {
+  Future<int>  updateGroupCode(GroupCode data) async {
     const String _tableName = _groupTable;
     Database db = await DatabaseHelper.instance.database;
     int result = await db.rawUpdate(
         'UPDATE $_tableName SET name = ? WHERE id = ?',
         [data.name, data.id]
     );
-    // assert(result == 1);
     return result;
-  }
+  } // updateGroupCode
+
+  Future<int>  updateFavorite(FavoriteData data) async {
+    const String _tableName = _favoritesTable;
+    Database db = await DatabaseHelper.instance.database;
+    int result = await db.rawUpdate(
+        'UPDATE $_tableName SET name = ? WHERE id = ?',
+        [data.name, data.id]
+    );
+    return result;
+  } // updateGroupCode
 
 
 } // class DatabaseHelper

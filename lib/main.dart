@@ -1,5 +1,8 @@
 import 'dart:developer';
 
+import 'package:dbdb/model/group_code.dart';
+import 'package:dbdb/model/route_code.dart';
+import 'package:dbdb/model/route_data.dart';
 import 'package:flutter/material.dart';
 
 import 'database/database_helper.dart';
@@ -55,6 +58,22 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    log('initState starting...');
+    // WidgetsBinding.instance?.addPostFrameCallback((FrameCallback callback) {
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      // executes after build
+      log('--- executes after build.');
+    });
+
+    Future.delayed(Duration.zero, () {
+      log('future delayed zero.');
+    });
+  }
+
+
   void _incrementCounter()  async {
     setState(() {
       _counter++;
@@ -71,47 +90,88 @@ class _MyHomePageState extends State<MyHomePage> {
         updated: DateTime.now().toString()
       )
     );
-    log('@@ $result rows are inserted.');
 
     List<FavoriteData> list = await DatabaseHelper.instance.queryAllFavorite();
+    log('@@ $result rows are inserted. length: ${list.length}');
 
     for(var fd in list) {
       log(fd.toString());
     }
   }
 
+  void _createGroupCode() async {
+    int result = 0;
+    result = await DatabaseHelper.instance.insertGroupCode(
+      '그룹 $_counter',
+    );
+    log('@@ $result rows are inserted.');
+    List<GroupCode> list = await DatabaseHelper.instance.queryAllGroupCode();
+
+    for(var rd in list) {
+      log(rd.toString());
+    }
+  }
+
+
+  void _createRouteCode() async {
+    int result = 0;
+    // 먼저 해당 routeId에 해당하는 자료를 삭제한 후 루트 데이터를 insert 한다.
+    // result = await DatabaseHelper.instance.deleteById(DatabaseHelper._routeCodeTable, _counter);
+    // log('삭제 후: $result');
+      result = await DatabaseHelper.instance.insertRouteCode(
+      '루트 그룹 $_counter',
+        DateTime.now().toString(),
+      );
+    log('@@ $result rows are inserted.');
+    List<RouteCode> list = await DatabaseHelper.instance.queryAllRouteCode();
+
+    for(var rd in list) {
+      log(rd.toString());
+    }
+  }
+
+  void _manageRoute() async {
+    int result = 0;
+    // 먼저 해당 routeId에 해당하는 자료를 삭제한 후 루트 데이터를 insert 한다.
+    result = await DatabaseHelper.instance.deleteRouteId(_counter);
+    log('삭제 후: routeId: $_counter, 결과: $result');
+    for(int i=0; i<_counter+1; i++) {
+      result = await DatabaseHelper.instance.insertRoute(
+          RouteData(
+              routeId: _counter,
+              idx: i+1,
+              name: '포인트 ${i+1}',
+              latitude: 37.55 + i+1,
+              longitude: 126.66 + i+1,
+              accuracy: 10.1 + i+1,
+          )
+      );
+    }
+    log('@@ $result rows are inserted.');
+    List<RouteData> list = await DatabaseHelper.instance.queryAllRoute(_counter);
+
+    for(var rd in list) {
+      log(rd.toString());
+    }
+
+    list = await DatabaseHelper.instance.queryAllRoute(_counter-1);
+
+    for(var rd in list) {
+      log(rd.toString());
+    }
+
+
+  }
+
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    log('build starting...');
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
@@ -119,17 +179,32 @@ class _MyHomePageState extends State<MyHomePage> {
               style: Theme.of(context).textTheme.headline4,
             ),
             ElevatedButton(
+              child: const Text('숫자 증가'),
+              onPressed:         _incrementCounter,
+            ), // ElevatedButton
+            ElevatedButton(
+              child: const Text('그룹 생성'),
+              onPressed: _createGroupCode,
+            ), // ElevatedButton
+            ElevatedButton(
+              child: const Text('루트 그룹 생성'),
+              onPressed: _createRouteCode,
+            ), // ElevatedButton
+            ElevatedButton(
+              child: const Text('루트 내용 추가'),
+              onPressed: _manageRoute,
+            ), // ElevatedButton
+            ElevatedButton(
               child: const Text('데이타베이스 제거'),
               onPressed: () => DatabaseHelper.instance.myDeleteDatabase(),
-            ),
+            ), // ElevatedButton
+            ElevatedButton(
+              child: const Text('데이타베이스 제거'),
+              onPressed: () => DatabaseHelper.instance.myDeleteDatabase(),
+            ), // ElevatedButton
           ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: '숫자 증가',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+        ), // Column
+      ), // Center
+    ); // Scaffold
   }
 }
