@@ -4,6 +4,7 @@ import 'package:dbdb/model/group_code.dart';
 import 'package:dbdb/model/route_code.dart';
 import 'package:dbdb/model/route_data.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import 'database/database_helper.dart';
 import 'model/favorite_data.dart';
@@ -18,18 +19,9 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
+    return GetMaterialApp(
+      title: 'db db',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
       ),
       home: const MyHomePage(title: 'db db'),
@@ -40,15 +32,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -58,6 +41,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
+  String _resultText = '초기값';
+
   @override
   void initState() {
     super.initState();
@@ -65,7 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // WidgetsBinding.instance?.addPostFrameCallback((FrameCallback callback) {
     WidgetsBinding.instance?.addPostFrameCallback((_) {
       // executes after build
-      log('--- executes after build.');
+     log('--- executes after build.');
     });
 
     Future.delayed(Duration.zero, () {
@@ -93,6 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     List<FavoriteData> list = await DatabaseHelper.instance.queryAllFavorite();
     log('@@ $result rows are inserted. length: ${list.length}');
+    Get.snackbar('숫자 증가', '@@ $result rows are inserted. length: ${list.length}');
 
     for(var fd in list) {
       log(fd.toString());
@@ -174,34 +160,147 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
             ElevatedButton(
-              child: const Text('숫자 증가'),
-              onPressed:         _incrementCounter,
+              child: const Text('다이알로그 11'),
+              onPressed: () {
+                Get.defaultDialog(
+                  title: '알림창',
+                  middleText: '다이알로그 11: $_resultText',
+                  barrierDismissible: false,
+                  radius: 20,
+                  textConfirm: '확인',
+                  onConfirm: () {
+                    log('onConfirm clicked.');
+                    Get.back();
+                  },
+                );
+              },
             ), // ElevatedButton
             ElevatedButton(
-              child: const Text('그룹 생성'),
-              onPressed: _createGroupCode,
+              child: const Text('다이알로그 22'),
+              onPressed: () {
+                Get.defaultDialog(
+                  title: '알림창',
+                  middleText: '다이알로그 22: 기존 _resultText: $_resultText',
+                  barrierDismissible: false,
+                  radius: 20,
+                  textConfirm: '확인',
+                  textCancel: '취소',
+                  onConfirm: () {
+                    setState(() {
+                      _resultText = 'OK';
+                    });
+                    log('onConfirm clicked.');
+                    Get.back();
+                  },
+                  onCancel: () {
+                    setState(() {
+                      _resultText = 'CANCEL';
+                    });
+                    log('onCancel clicked.');
+                    Get.back();
+                  },
+                );
+              },
             ), // ElevatedButton
             ElevatedButton(
-              child: const Text('루트 그룹 생성'),
-              onPressed: _createRouteCode,
+              child: const Text('다이알로그 33'),
+              onPressed: () {
+                Get.defaultDialog(
+                  title: '알림창',
+                  middleText: '다이알로그 33: 기존 _resultText: $_resultText',
+                  // content:  Column(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  //   // ignore: prefer_const_literals_to_create_immutables
+                  //   children: <Widget>[
+                  //   const Text('콘텐츠 영역 1'),
+                  //   const Text('콘텐츠 영역 2'),
+                  // ],
+                  // ),
+                  barrierDismissible: false,
+                  radius: 20,
+                  textConfirm: '확인',
+                  textCancel: '취소',
+                  onConfirm: () {
+                    setState(() {
+                      _resultText = 'OK 33';
+                    });
+                    log('onConfirm clicked.');
+                    Get.back();
+                  },
+                  onCancel: () {
+                    setState(() {
+                      _resultText = 'CANCEL 33';
+                    });
+                    log('onCancel clicked.');
+                    Get.back();
+                  },
+                );
+              },
             ), // ElevatedButton
             ElevatedButton(
-              child: const Text('루트 내용 추가'),
-              onPressed: _manageRoute,
+              child: const Text('첫 번째'),
+              onPressed: () {
+                Get.snackbar(
+                  '스넥바 타이틀입니다.',
+                  '두번째 인자로 표시 내용을 전달해야 합니다.',
+                  duration: const Duration(seconds: 30),
+                  isDismissible: true,
+                );
+              },
             ), // ElevatedButton
             ElevatedButton(
-              child: const Text('데이타베이스 제거'),
-              onPressed: () => DatabaseHelper.instance.myDeleteDatabase(),
+              child: const Text('두 번째'),
+              onPressed: () {
+                Get.snackbar(
+                  '두번째 스넥바',
+                  ' 여기에 내용을 표시해야 함, 30초 후에 자동으로 사라지거나 탭 하면 사라짐.',
+                  duration: const Duration(seconds: 30),
+                  isDismissible: true,
+                  onTap: (_) => Get.back(),
+                );
+              },
             ), // ElevatedButton
             ElevatedButton(
-              child: const Text('데이타베이스 제거'),
-              onPressed: () => DatabaseHelper.instance.myDeleteDatabase(),
+              child: const Text('세 번째'),
+              onPressed: () {
+                Get.snackbar(
+                  ' 3 번째 스넥바 타이틀 ',
+                  ' 60 초 후에 사라지지 않을 것으로 추정됨, 탭 해야만 스넥바가 닫힐 것으로 예상함.',
+                  duration: const Duration(seconds: 60),
+                  isDismissible: false,
+                  onTap: (_) => Get.back(),
+                );
+              },
             ), // ElevatedButton
+            // Text(
+            //   '$_counter',
+            //   style: Theme.of(context).textTheme.headline4,
+            // ),
+            // ElevatedButton(
+            //   child: const Text('숫자 증가'),
+            //   onPressed:         _incrementCounter,
+            // ), // ElevatedButton
+            // ElevatedButton(
+            //   child: const Text('그룹 생성'),
+            //   onPressed: _createGroupCode,
+            // ), // ElevatedButton
+            // ElevatedButton(
+            //   child: const Text('루트 그룹 생성'),
+            //   onPressed: _createRouteCode,
+            // ), // ElevatedButton
+            // ElevatedButton(
+            //   child: const Text('루트 내용 추가'),
+            //   onPressed: _manageRoute,
+            // ), // ElevatedButton
+            // ElevatedButton(
+            //   child: const Text('데이타베이스 제거'),
+            //   onPressed: () => DatabaseHelper.instance.myDeleteDatabase(),
+            // ), // ElevatedButton
+            // ElevatedButton(
+            //   child: const Text('데이타베이스 제거'),
+            //   onPressed: () => DatabaseHelper.instance.myDeleteDatabase(),
+            // ), // ElevatedButton
           ],
         ), // Column
       ), // Center
