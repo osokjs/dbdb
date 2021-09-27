@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:dbdb/model/group_code.dart';
 import 'package:dbdb/model/route_code.dart';
 import 'package:dbdb/model/route_data.dart';
+import 'package:dbdb/view/full_screen_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -43,6 +44,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String _resultText = '초기값';
 
+  final TextEditingController _controller = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +61,12 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   void _incrementCounter()  async {
     setState(() {
@@ -161,46 +170,30 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             ElevatedButton(
-              child: const Text('다이알로그 11'),
+              child: const Text('custom 다이알로그 '),
               onPressed: () {
-                Get.defaultDialog(
-                  title: '알림창',
-                  middleText: '다이알로그 11: $_resultText',
+                Get.dialog(
+                  Dialog(
+                  child: _groupManagement(),
+                  ),
                   barrierDismissible: false,
-                  radius: 20,
-                  textConfirm: '확인',
-                  onConfirm: () {
-                    log('onConfirm clicked.');
-                    Get.back();
-                  },
-                );
+    name:'custom dialog test' ,
+    );
+                    log('dialog closed.');
               },
             ), // ElevatedButton
             ElevatedButton(
               child: const Text('다이알로그 22'),
               onPressed: () {
-                Get.defaultDialog(
-                  title: '알림창',
-                  middleText: '다이알로그 22: 기존 _resultText: $_resultText',
-                  barrierDismissible: false,
-                  radius: 20,
-                  textConfirm: '확인',
-                  textCancel: '취소',
-                  onConfirm: () {
-                    setState(() {
-                      _resultText = 'OK';
-                    });
-                    log('onConfirm clicked.');
-                    Get.back();
-                  },
-                  onCancel: () {
-                    setState(() {
-                      _resultText = 'CANCEL';
-                    });
-                    log('onCancel clicked.');
-                    Get.back();
-                  },
+                log('full screen dialog starting...');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) => FullScreenDialog(),
+                    fullscreenDialog: true,
+                  ),
                 );
+                log('full screen dialog closed');
               },
             ), // ElevatedButton
             ElevatedButton(
@@ -305,5 +298,70 @@ class _MyHomePageState extends State<MyHomePage> {
         ), // Column
       ), // Center
     ); // Scaffold
-  }
-}
+  } // build
+
+Widget _groupManagement() {
+  return GestureDetector(
+    onTap: () => FocusScope.of(context).unfocus(),
+    child: Column(
+      children: <Widget>[
+        Text('카테고리 관리',
+          style: Theme.of(context).textTheme.headline4,
+        ),
+        const SizedBox(height: 30,),
+        TextField(
+          controller: _controller,
+          keyboardType: TextInputType.text,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: '카테고리 이름:',
+            hintText: '카테고리 이름을 10자 이내로 입력하세요.',
+          ),
+        ), // TextFormField
+        const SizedBox(height: 20,),
+        ElevatedButton(
+          onPressed: () {
+            String value = _controller.text.trim();
+
+            // if(!_isValid(context, value)) return;
+
+            log('text value($value)');
+            _controller.clear();
+            setState(() {});
+          },
+          child: const Text('저장'),
+        ), // ElevatedButton
+        ElevatedButton(
+          onPressed: () => Get.back(),
+          child: const Text('닫기'),
+        ), // ElevatedButton
+      ],
+    ), // Column
+  ); // GestureDetector
+} // _groupManagement
+
+  // void _showAlertDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false, // user must tap button!
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: Text('카테고리 관리'),
+  //         content: Text('내용: $content, 길이: ${content.length}'),
+  //         actions: <Widget>[
+  //           TextButton(
+  //             child: Text('OK'),
+  //             onPressed: () {
+  //               Navigator.pop(context, "OK");
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // } // _showAlertDialog
+  //
+
+
+} // class
+
