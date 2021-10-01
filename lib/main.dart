@@ -53,7 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // WidgetsBinding.instance?.addPostFrameCallback((FrameCallback callback) {
     WidgetsBinding.instance?.addPostFrameCallback((_) {
       // executes after build
-     log('--- executes after build.');
+      log('--- executes after build.');
     });
 
     Future.delayed(Duration.zero, () {
@@ -61,35 +61,32 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
-  void _incrementCounter()  async {
+  void _incrementCounter() async {
     setState(() {
       _counter++;
     });
 
-    int result = await DatabaseHelper.instance.insertFavorite(
-      FavoriteData(
+    int result = await DatabaseHelper.instance.insertFavorite(FavoriteData(
         id: 0,
         groupId: 1,
         name: '내 장소 $_counter',
         latitude: 37.55 + _counter,
         longitude: 126.66 + _counter,
         accuracy: 10.1 + _counter,
-        updated: DateTime.now().toString()
-      )
-    );
+        updated: DateTime.now().toString()));
 
     List<FavoriteData> list = await DatabaseHelper.instance.queryAllFavorite();
     log('@@ $result rows are inserted. length: ${list.length}');
-    Get.snackbar('숫자 증가', '@@ $result rows are inserted. length: ${list.length}');
+    Get.snackbar(
+        '숫자 증가', '@@ $result rows are inserted. length: ${list.length}');
 
-    for(var fd in list) {
+    for (var fd in list) {
       log(fd.toString());
     }
   }
@@ -102,25 +99,24 @@ class _MyHomePageState extends State<MyHomePage> {
     log('@@ $result rows are inserted.');
     List<GroupCode> list = await DatabaseHelper.instance.queryAllGroupCode();
 
-    for(var rd in list) {
+    for (var rd in list) {
       log(rd.toString());
     }
   }
-
 
   void _createRouteCode() async {
     int result = 0;
     // 먼저 해당 routeId에 해당하는 자료를 삭제한 후 루트 데이터를 insert 한다.
     // result = await DatabaseHelper.instance.deleteById(DatabaseHelper._routeCodeTable, _counter);
     // log('삭제 후: $result');
-      result = await DatabaseHelper.instance.insertRouteCode(
+    result = await DatabaseHelper.instance.insertRouteCode(
       '루트 그룹 $_counter',
-        DateTime.now().toString(),
-      );
+      DateTime.now().toString(),
+    );
     log('@@ $result rows are inserted.');
     List<RouteCode> list = await DatabaseHelper.instance.queryAllRouteCode();
 
-    for(var rd in list) {
+    for (var rd in list) {
       log(rd.toString());
     }
   }
@@ -130,32 +126,29 @@ class _MyHomePageState extends State<MyHomePage> {
     // 먼저 해당 routeId에 해당하는 자료를 삭제한 후 루트 데이터를 insert 한다.
     result = await DatabaseHelper.instance.deleteRouteId(_counter);
     log('삭제 후: routeId: $_counter, 결과: $result');
-    for(int i=0; i<_counter+1; i++) {
-      result = await DatabaseHelper.instance.insertRoute(
-          RouteData(
-              routeId: _counter,
-              idx: i+1,
-              name: '포인트 ${i+1}',
-              latitude: 37.55 + i+1,
-              longitude: 126.66 + i+1,
-              accuracy: 10.1 + i+1,
-          )
-      );
+    for (int i = 0; i < _counter + 1; i++) {
+      result = await DatabaseHelper.instance.insertRoute(RouteData(
+        routeId: _counter,
+        idx: i + 1,
+        name: '포인트 ${i + 1}',
+        latitude: 37.55 + i + 1,
+        longitude: 126.66 + i + 1,
+        accuracy: 10.1 + i + 1,
+      ));
     }
     log('@@ $result rows are inserted.');
-    List<RouteData> list = await DatabaseHelper.instance.queryAllRoute(_counter);
+    List<RouteData> list =
+        await DatabaseHelper.instance.queryAllRoute(_counter);
 
-    for(var rd in list) {
+    for (var rd in list) {
       log(rd.toString());
     }
 
-    list = await DatabaseHelper.instance.queryAllRoute(_counter-1);
+    list = await DatabaseHelper.instance.queryAllRoute(_counter - 1);
 
-    for(var rd in list) {
+    for (var rd in list) {
       log(rd.toString());
     }
-
-
   }
 
   @override
@@ -174,12 +167,19 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () {
                 Get.dialog(
                   Dialog(
-                  child: _groupManagement(),
+                    child: _groupManagement(),
                   ),
                   barrierDismissible: false,
-    name:'custom dialog test' ,
-    );
-                    log('dialog closed.');
+                  name: 'custom dialog test',
+                );
+                log('dialog closed.');
+              },
+            ), // ElevatedButton
+            ElevatedButton(
+              child: const Text('show alert dialog'),
+              onPressed: () {
+                _showAlertDialog(context);
+                log('dialog closed.');
               },
             ), // ElevatedButton
             ElevatedButton(
@@ -300,68 +300,108 @@ class _MyHomePageState extends State<MyHomePage> {
     ); // Scaffold
   } // build
 
-Widget _groupManagement() {
-  return GestureDetector(
-    onTap: () => FocusScope.of(context).unfocus(),
-    child: Column(
-      children: <Widget>[
-        Text('카테고리 관리',
-          style: Theme.of(context).textTheme.headline4,
-        ),
-        const SizedBox(height: 30,),
-        TextField(
-          controller: _controller,
-          keyboardType: TextInputType.text,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            labelText: '카테고리 이름:',
-            hintText: '카테고리 이름을 10자 이내로 입력하세요.',
+  Widget _groupManagement() {
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Column(
+        children: <Widget>[
+          Text(
+            '카테고리 관리',
+            style: Theme.of(context).textTheme.headline4,
           ),
-        ), // TextFormField
-        const SizedBox(height: 20,),
-        ElevatedButton(
-          onPressed: () {
-            String value = _controller.text.trim();
+          const SizedBox(
+            height: 30,
+          ),
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.text,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: '카테고리 이름:',
+              hintText: '카테고리 이름을 10자 이내로 입력하세요.',
+            ),
+          ), // TextFormField
+          const SizedBox(
+            height: 20,
+          ),
+          ElevatedButton(
+            onPressed: () {
+              String value = _controller.text.trim();
 
-            // if(!_isValid(context, value)) return;
+              // if(!_isValid(context, value)) return;
 
-            log('text value($value)');
-            _controller.clear();
-            setState(() {});
-          },
-          child: const Text('저장'),
-        ), // ElevatedButton
-        ElevatedButton(
-          onPressed: () => Get.back(),
-          child: const Text('닫기'),
-        ), // ElevatedButton
-      ],
-    ), // Column
-  ); // GestureDetector
-} // _groupManagement
+              log('text value($value)');
+              _controller.clear();
+              setState(() {});
+            },
+            child: const Text('저장'),
+          ), // ElevatedButton
+          ElevatedButton(
+            onPressed: () => Get.back(),
+            child: const Text('닫기'),
+          ), // ElevatedButton
+        ],
+      ), // Column
+    ); // GestureDetector
+  } // _groupManagement
 
-  // void _showAlertDialog(BuildContext context) {
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: false, // user must tap button!
-  //     builder: (context) {
-  //       return AlertDialog(
-  //         title: Text('카테고리 관리'),
-  //         content: Text('내용: $content, 길이: ${content.length}'),
-  //         actions: <Widget>[
-  //           TextButton(
-  //             child: Text('OK'),
-  //             onPressed: () {
-  //               Navigator.pop(context, "OK");
-  //             },
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // } // _showAlertDialog
-  //
+  void _showAlertDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (context) {
+        return AlertDialog(
+          title: Text('카테고리 관리'),
+          content: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: Column(
+              children: <Widget>[
+                Text(
+                  '카테고리 관리',
+                  style: Theme.of(context).textTheme.headline4,
+                ),
+                const SizedBox(
+                  height: 30,
+                ),
+                TextField(
+                  controller: _controller,
+                  keyboardType: TextInputType.text,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: '카테고리 이름:',
+                    hintText: '카테고리 이름을 10자 이내로 입력하세요.',
+                  ),
+                ), // TextFormField
+                const SizedBox(
+                  height: 20,
+                ),
+                ElevatedButton(
+                  child: const Text('저장'),
+                  onPressed: () {
+                    String value = _controller.text.trim();
 
+                    // if(!_isValid(context, value)) return;
+
+                    log('text value($value)');
+                    _controller.clear();
+                    setState(() {});
+                  },
+                ), // ElevatedButton
+              ],
+            ), // Column
+          ), // GestureDetector
+          actions: <Widget>[
+            ElevatedButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.pop(context, "OK");
+              },
+            ),
+          ],
+        );
+      },
+    );
+  } // _showAlertDialog
 
 } // class
 
