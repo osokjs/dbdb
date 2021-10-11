@@ -178,7 +178,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               child: const Text('show alert dialog'),
               onPressed: () {
-                _showAlertDialog(context);
+                _showAlertDialog(context, DateTime.now().toString());
                 log('dialog closed.');
               },
             ), // ElevatedButton
@@ -189,7 +189,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute<void>(
-                    builder: (BuildContext context) => FullScreenDialog(),
+                    builder: (BuildContext context) => const FullScreenDialog(),
                     fullscreenDialog: true,
                   ),
                 );
@@ -345,54 +345,52 @@ class _MyHomePageState extends State<MyHomePage> {
     ); // GestureDetector
   } // _groupManagement
 
-  void _showAlertDialog(BuildContext context) {
-    showDialog(
+  void _showAlertDialog(BuildContext context, String name) async {
+    TextEditingController dialogController = TextEditingController(text: name);
+    await showDialog(
       context: context,
       barrierDismissible: false, // user must tap button!
       builder: (context) {
         return AlertDialog(
-          title: Text('카테고리 관리'),
-          content: GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Column(
-              children: <Widget>[
-                Text(
-                  '카테고리 관리',
-                  style: Theme.of(context).textTheme.headline4,
+          title: const Text('카테고리 관리'),
+          content: Column(
+            children: <Widget>[
+              Text(
+                '카테고리 관리',
+                style: Theme.of(context).textTheme.headline4,
+              ),
+              const SizedBox(
+                height: 5,
+              ),
+              TextField(
+                controller: dialogController,
+                keyboardType: TextInputType.text,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: '카테고리 이름:',
+                  hintText: '카테고리 이름을 10자 이내로 입력하세요.',
                 ),
-                const SizedBox(
-                  height: 30,
-                ),
-                TextField(
-                  controller: _controller,
-                  keyboardType: TextInputType.text,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: '카테고리 이름:',
-                    hintText: '카테고리 이름을 10자 이내로 입력하세요.',
-                  ),
-                ), // TextFormField
-                const SizedBox(
-                  height: 20,
-                ),
-                ElevatedButton(
-                  child: const Text('저장'),
-                  onPressed: () {
-                    String value = _controller.text.trim();
+              ), // TextFormField
+              const SizedBox(
+                height: 5,
+              ),
+              ElevatedButton(
+                child: const Text('저장'),
+                onPressed: () {
+                  String value = _controller.text.trim();
 
-                    // if(!_isValid(context, value)) return;
+                  // if(!_isValid(context, value)) return;
 
-                    log('text value($value)');
-                    _controller.clear();
-                    setState(() {});
-                  },
-                ), // ElevatedButton
-              ],
-            ), // Column
+                  log('text value($value)');
+                  _controller.clear();
+                  setState(() {});
+                },
+              ), // ElevatedButton
+            ],
           ), // GestureDetector
           actions: <Widget>[
             ElevatedButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.pop(context, "OK");
               },
@@ -401,6 +399,7 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       },
     );
+    dialogController.dispose();
   } // _showAlertDialog
 
 } // class
